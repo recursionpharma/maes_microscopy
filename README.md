@@ -1,5 +1,5 @@
 # Masked Autoencoders are Scalable Learners of Cellular Morphology
-Official repo for Recursion's accepted spotlight paper at NeurIPS 2023 Generative AI &amp; Biology workshop.
+Official repo for Recursion's accepted spotlight paper at [NeurIPS 2023 Generative AI &amp; Biology workshop](https://openreview.net/group?id=NeurIPS.cc/2023/Workshop/GenBio).
 
 Paper: https://arxiv.org/abs/2309.16064
 
