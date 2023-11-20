@@ -3,7 +3,8 @@ Official repo for Recursion's accepted spotlight paper at [NeurIPS 2023 Generati
 
 Paper: https://arxiv.org/abs/2309.16064
 
-![vit_diff_mask_ratios](https://github.com/recursionpharma/maes_microscopy/assets/109550980/409ac47b-a7d4-4158-b030-a88234e2b21f)
+![vit_diff_mask_ratios](https://github.com/recursionpharma/maes_microscopy/assets/109550980/c15f46b1-cdb9-41a7-a4af-bdc9684a971d)
+
 
 ## Provided code
 The baseline Vision Transformer architecture backbone used in this work can be built with the following code snippet from Timm:
