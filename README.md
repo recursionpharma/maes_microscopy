@@ -31,5 +31,7 @@ def vit_base_patch16_256(**kwargs):
 
 Additional code will be released as the date of the workshop gets closer.
 
+**While we cannot share all the internal code we've written training and evaluation of these models, it would be very useful if interested persons could raise an Issue in this repo to inform us as to what the most useful aspects of the code for this project would be of interest to the broader community.**
+
 ## Provided models
 Stay tuned...
