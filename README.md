@@ -34,4 +34,6 @@ Additional code will be released as the date of the workshop gets closer.
 **While we cannot share all the internal code we've written training and evaluation of these models, it would be very useful if interested persons could raise an Issue in this repo to inform us as to what the most useful aspects of the code for this project would be of interest to the broader community.**
 
 ## Provided models
-Stay tuned...
+We have partnered with Nvidia to host a publicly-available smaller and more flexible version of the MAE phenomics foundation model, called Phenom-Beta. Interested parties can access it directly through the Nvidia BioNemo API:
+- https://blogs.nvidia.com/blog/drug-discovery-bionemo-generative-ai/
+- https://www.youtube.com/watch?v=Gch6bX1toB0
