@@ -4,6 +4,6 @@ torch==2.1.0+cu121
 torchmetrics==1.2.0
 torchvision==0.16.0+cu121
 tqdm==4.66.1
-transformers==4.35.2
+transformers==4.38.0
 xformers==0.0.22.post7
 zarr==2.16.1
