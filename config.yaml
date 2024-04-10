@@ -1,0 +1,15 @@
+loss:
+  _target_: torch.nn.MSELoss  # combine with fourier loss weighted at 0.01 mixing factor for best results
+  reduction: none
+optimizer:
+  _target_: timm.optim.lion.Lion
+  _partial_: true
+  lr: *lr 1e-4   # 1e-4 for <= ViT-B, and 3e-5 for ViT-L
+  weight_decay: 0.05
+  betas: [0.9, 0.95]
+lr_scheduler:
+  _target_: torch.optim.lr_scheduler.OneCycleLR
+  _partial_: true
+  max_lr: @lr
+  pct_start: 0.1
+  anneal_strategy: cos
