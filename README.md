@@ -1,13 +1,17 @@
 # Masked Autoencoders are Scalable Learners of Cellular Morphology
-Official repo for Recursion's accepted spotlight paper at [NeurIPS 2023 Generative AI &amp; Biology workshop](https://openreview.net/group?id=NeurIPS.cc/2023/Workshop/GenBio).
-
-Paper: https://arxiv.org/abs/2309.16064
+Official repo for Recursion's two recently accepted papers:
+- Spotlight full-length paper at [CVPR 2024](https://cvpr.thecvf.com/Conferences/2024/AcceptedPapers) -- Masked Autoencoders for Microscopy are Scalable Learners of Cellular Biology
+  - Paper: link to be shared soon!
+- Spotlight workshop paper at [NeurIPS 2023 Generative AI &amp; Biology workshop](https://openreview.net/group?id=NeurIPS.cc/2023/Workshop/GenBio)
+  - Paper: https://arxiv.org/abs/2309.16064
 
 ![vit_diff_mask_ratios](https://github.com/recursionpharma/maes_microscopy/assets/109550980/c15f46b1-cdb9-41a7-a4af-bdc9684a971d)
 
 
 ## Provided code
-The baseline Vision Transformer architecture backbone used in this work can be built with the following code snippet from Timm:
+See the repo for ingredients required for defining our MAEs. Users seeking to re-implement training will need to stitch together the Encoder and Decoder modules according to their usecase.
+
+Furthermore the baseline Vision Transformer architecture backbone used in this work can be built with the following code snippet from Timm:
 ```
 import timm.models.vision_transformer as vit
 
@@ -29,7 +33,7 @@ def vit_base_patch16_256(**kwargs):
     return vit.vit_base_patch16_224(**default_kwargs)
 ```
 
-Additional code will be released as the date of the workshop gets closer.
-
 ## Provided models
-Stay tuned...
+A publicly available model for research can be found via Nvidia's BioNemo platform, which handles inference and auto-scaling for you: https://www.rxrx.ai/phenom
+
+We are not able to release model weights at this time.
