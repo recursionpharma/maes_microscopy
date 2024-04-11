@@ -1,3 +1,4 @@
+# © Recursion Pharmaceuticals 2024
 from typing import Tuple, Union
 
 import torch
@@ -36,11 +37,15 @@ def transformer_random_masking(
 
     # get masked input
     tokens_to_keep = shuffled_tokens[:, :len_keep]  # keep the first len_keep indices
-    x_masked = torch.gather(x, dim=1, index=tokens_to_keep.unsqueeze(-1).repeat(1, 1, D))
+    x_masked = torch.gather(
+        x, dim=1, index=tokens_to_keep.unsqueeze(-1).repeat(1, 1, D)
+    )
 
     # get binary mask used for loss masking: 0 is keep, 1 is remove
     mask = torch.ones([N, L], device=x.device)
     mask[:, :len_keep] = 0
-    mask = torch.gather(mask, dim=1, index=ind_restore)  # unshuffle to get the binary mask
+    mask = torch.gather(
+        mask, dim=1, index=ind_restore
+    )  # unshuffle to get the binary mask
 
     return x_masked, mask, ind_restore

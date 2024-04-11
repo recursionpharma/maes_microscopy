@@ -1,3 +1,4 @@
+# © Recursion Pharmaceuticals 2024
 loss:
   _target_: torch.nn.MSELoss  # combine with fourier loss weighted at 0.01 mixing factor for best results
   reduction: none

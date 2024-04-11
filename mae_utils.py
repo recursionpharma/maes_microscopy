@@ -1,9 +1,12 @@
+# © Recursion Pharmaceuticals 2024
 import math
 
 import torch
 
 
-def flatten_images(img: torch.Tensor, patch_size: int, channel_agnostic: bool = False) -> torch.Tensor:
+def flatten_images(
+    img: torch.Tensor, patch_size: int, channel_agnostic: bool = False
+) -> torch.Tensor:
     """
     Flattens 2D images into tokens with the same pixel values
 
@@ -33,7 +36,10 @@ def flatten_images(img: torch.Tensor, patch_size: int, channel_agnostic: bool = 
 
 
 def unflatten_tokens(
-    tokens: torch.Tensor, patch_size: int, num_modalities: int = 1, channel_agnostic: bool = False
+    tokens: torch.Tensor,
+    patch_size: int,
+    num_modalities: int = 1,
+    channel_agnostic: bool = False,
 ) -> torch.Tensor:
     """
     Unflattens tokens (N,L,patch_size**2 * C) into image tensor (N,C,H,W) with the pixel values

@@ -1,3 +1,4 @@
+# © Recursion Pharmaceuticals 2024
 from typing import Dict
 
 import timm.models.vision_transformer as vit
