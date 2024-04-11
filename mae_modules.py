@@ -1,3 +1,4 @@
+# © Recursion Pharmaceuticals 2024
 from functools import partial
 from typing import Tuple, Union
 

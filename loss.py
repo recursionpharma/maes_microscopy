@@ -1,3 +1,4 @@
+# © Recursion Pharmaceuticals 2024
 import torch
 import torch.nn as nn
 
@@ -16,7 +17,9 @@ class FourierLoss(nn.Module):
         output of this loss be managed by the model under question.
         """
         super().__init__()
-        self.loss = nn.L1Loss(reduction="none") if use_l1_loss else nn.MSELoss(reduction="none")
+        self.loss = (
+            nn.L1Loss(reduction="none") if use_l1_loss else nn.MSELoss(reduction="none")
+        )
         self.num_modalities = num_multimodal_modalities
 
     def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
@@ -34,7 +37,9 @@ class FourierLoss(nn.Module):
             H_W = h * w
 
         if len(input.shape) != len(target.shape) != 4:
-            raise ValueError(f"Invalid input shape: got {input.shape} and {target.shape}.")
+            raise ValueError(
+                f"Invalid input shape: got {input.shape} and {target.shape}."
+            )
 
         fft_reconstructed = torch.fft.fft2(input)
         fft_original = torch.fft.fft2(target)
@@ -42,9 +47,13 @@ class FourierLoss(nn.Module):
         magnitude_reconstructed = torch.abs(fft_reconstructed)
         magnitude_original = torch.abs(fft_original)
 
-        loss_tensor: torch.Tensor = self.loss(magnitude_reconstructed, magnitude_original)
+        loss_tensor: torch.Tensor = self.loss(
+            magnitude_reconstructed, magnitude_original
+        )
 
-        if flattened_images and not self.num_bins:  # then output loss should be reshaped
+        if (
+            flattened_images and not self.num_bins
+        ):  # then output loss should be reshaped
             loss_tensor = loss_tensor.reshape(B, H_W * self.num_modalities, C)
 
         return loss_tensor

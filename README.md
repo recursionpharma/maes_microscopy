@@ -34,7 +34,7 @@ def vit_base_patch16_256(**kwargs):
 ```
 
 ## Provided models
-A publicly available model for research can be found via Nvidia's BioNemo platform, which handles inference and auto-scaling for you: https://www.rxrx.ai/phenom
+A publicly available model for research can be found via Nvidia's BioNemo platform, which handles inference and auto-scaling: https://www.rxrx.ai/phenom
 
 We have partnered with Nvidia to host a publicly-available smaller and more flexible version of the MAE phenomics foundation model, called Phenom-Beta. Interested parties can access it directly through the Nvidia BioNemo API:
 - https://blogs.nvidia.com/blog/drug-discovery-bionemo-generative-ai/

@@ -1,9 +1,14 @@
+# © Recursion Pharmaceuticals 2024
 import timm.models.vision_transformer as vit
 import torch
 
 
 def generate_2d_sincos_pos_embeddings(
-    embedding_dim: int, length: int, scale: float = 10000.0, use_class_token: bool = True, num_modality: int = 1
+    embedding_dim: int,
+    length: int,
+    scale: float = 10000.0,
+    use_class_token: bool = True,
+    num_modality: int = 1,
 ) -> torch.nn.Parameter:
     """
     Generate 2Dimensional sin/cosine positional embeddings
@@ -30,16 +35,25 @@ def generate_2d_sincos_pos_embeddings(
     """
 
     linear_positions = torch.arange(length, dtype=torch.float32)
-    height_mesh, width_mesh = torch.meshgrid(linear_positions, linear_positions, indexing="ij")
+    height_mesh, width_mesh = torch.meshgrid(
+        linear_positions, linear_positions, indexing="ij"
+    )
     positional_dim = embedding_dim // 4  # accomodate h and w x cos and sin embeddings
-    positional_weights = torch.arange(positional_dim, dtype=torch.float32) / positional_dim
+    positional_weights = (
+        torch.arange(positional_dim, dtype=torch.float32) / positional_dim
+    )
     positional_weights = 1.0 / (scale**positional_weights)
 
     height_weights = torch.outer(height_mesh.flatten(), positional_weights)
     width_weights = torch.outer(width_mesh.flatten(), positional_weights)
 
     positional_encoding = torch.cat(
-        [torch.sin(height_weights), torch.cos(height_weights), torch.sin(width_weights), torch.cos(width_weights)],
+        [
+            torch.sin(height_weights),
+            torch.cos(height_weights),
+            torch.sin(width_weights),
+            torch.cos(width_weights),
+        ],
         dim=1,
     )[None, :, :]
 
@@ -73,11 +87,15 @@ class ChannelAgnosticPatchEmbed(vit.PatchEmbed):  # type: ignore[misc]
             bias=bias,
         )
         # channel-agnostic MAE has a single projection for all chans
-        self.proj = torch.nn.Conv2d(1, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias)
+        self.proj = torch.nn.Conv2d(
+            1, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         in_chans = x.shape[1]
-        x = torch.stack([self.proj(x[:, i : i + 1]) for i in range(in_chans)], dim=2)  # single project for all chans
+        x = torch.stack(
+            [self.proj(x[:, i : i + 1]) for i in range(in_chans)], dim=2
+        )  # single project for all chans
         x = x.flatten(2).transpose(1, 2)  # BCMHW -> BNC
         return x
 
@@ -106,7 +124,9 @@ class ChannelAgnosticViT(vit.VisionTransformer):  # type: ignore[misc]
         return self.pos_drop(x)  # type: ignore[no-any-return]
 
 
-def channel_agnostic_vit(vit_backbone: vit.VisionTransformer, max_in_chans: int) -> vit.VisionTransformer:
+def channel_agnostic_vit(
+    vit_backbone: vit.VisionTransformer, max_in_chans: int
+) -> vit.VisionTransformer:
     # replace patch embedding with channel-agnostic version
     vit_backbone.patch_embed = ChannelAgnosticPatchEmbed(
         img_size=vit_backbone.patch_embed.img_size[0],
@@ -145,9 +165,14 @@ def sincos_positional_encoding_vit(
         the same ViT but with fixed no-grad positional encodings to add to vit patch encodings
     """
     # length: number of tokens along height or width of image after patching (assuming square)
-    length = vit_backbone.patch_embed.img_size[0] // vit_backbone.patch_embed.patch_size[0]
+    length = (
+        vit_backbone.patch_embed.img_size[0] // vit_backbone.patch_embed.patch_size[0]
+    )
     pos_embeddings = generate_2d_sincos_pos_embeddings(
-        vit_backbone.embed_dim, length=length, scale=scale, use_class_token=vit_backbone.cls_token is not None
+        vit_backbone.embed_dim,
+        length=length,
+        scale=scale,
+        use_class_token=vit_backbone.cls_token is not None,
     )
     # note, if the model had weight_init == 'skip', this might get overwritten
     vit_backbone.pos_embed = pos_embeddings
