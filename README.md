@@ -1,7 +1,8 @@
 # Masked Autoencoders are Scalable Learners of Cellular Morphology
 Official repo for Recursion's two recently accepted papers:
 - Spotlight full-length paper at [CVPR 2024](https://cvpr.thecvf.com/Conferences/2024/AcceptedPapers) -- Masked Autoencoders for Microscopy are Scalable Learners of Cellular Biology
-  - Paper: link to be shared soon!
+  - Paper: https://arxiv.org/abs/2404.10242
+  - CVPR poster page with video: https://cvpr.thecvf.com/virtual/2024/poster/31565
 - Spotlight workshop paper at [NeurIPS 2023 Generative AI &amp; Biology workshop](https://openreview.net/group?id=NeurIPS.cc/2023/Workshop/GenBio)
   - Paper: https://arxiv.org/abs/2309.16064
 
