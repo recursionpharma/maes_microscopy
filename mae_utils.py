@@ -68,3 +68,23 @@ def unflatten_tokens(
     img = x.reshape(shape=(x.shape[0], -1, h * patch_size, h * patch_size))
 
     return img
+
+def apply_norm_pix(flattened_imgs: torch.Tensor, eps: float = 1.0e-6) -> torch.Tensor:
+    """
+    self-normalization of each input patch
+
+    Parameters
+    ----------
+    imgs : torch.Tensor
+        images in patched format (N,num_patches,pixels)
+
+    Returns
+    -------
+    torch.Tensor
+        self-normalized patches (N,num_patches,pixels)
+    """
+    mean = flattened_imgs.mean(dim=-1, keepdim=True)
+    var = flattened_imgs.var(dim=-1, keepdim=True)
+    flattened_imgs = (flattened_imgs - mean) / (var + eps) ** 0.5
+
+    return flattened_imgs  # type: ignore[no-any-return]

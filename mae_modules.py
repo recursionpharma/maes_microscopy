@@ -7,8 +7,8 @@ import torch.nn as nn
 from timm.models.helpers import checkpoint_seq
 from timm.models.vision_transformer import Block, Mlp, VisionTransformer
 
-from .masking import transformer_random_masking
-from .vit import channel_agnostic_vit
+from masking import transformer_random_masking
+from vit import channel_agnostic_vit
 
 # If interested in training new MAEs, combine an encoder and decoder into a new module, and you should
 # leverage the flattening and unflattening utilities as needed from mae_utils.py.

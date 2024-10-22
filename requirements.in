@@ -1,0 +1,11 @@
+huggingface-hub
+timm
+torch>=2.3
+torchmetrics
+torchvision
+tqdm
+transformers
+xformers
+zarr
+hydra-core
+pytorch-lightning>=2.1
