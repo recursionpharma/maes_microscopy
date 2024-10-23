@@ -29,3 +29,4 @@ MANIFEST
 # model artifacts
 *.pickle
 *.ckpt
+*.safetensors

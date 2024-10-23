@@ -1,0 +1,68 @@
+{
+  "apply_loss_unmasked": false,
+  "architectures": [
+    "MAEModel"
+  ],
+  "crop_size": -1,
+  "decoder": {
+    "_target_": "mae_modules.CAMAEDecoder",
+    "depth": 4,
+    "embed_dim": 256,
+    "mlp_ratio": 4,
+    "norm_layer": {
+      "_partial_": true,
+      "_target_": "torch.nn.LayerNorm",
+      "eps": 1e-06
+    },
+    "num_heads": 16,
+    "num_modalities": 6,
+    "qkv_bias": true,
+    "tokens_per_modality": 256
+  },
+  "encoder": {
+    "_target_": "mae_modules.MAEEncoder",
+    "channel_agnostic": true,
+    "max_in_chans": 11,
+    "vit_backbone": {
+      "_target_": "vit.sincos_positional_encoding_vit",
+      "vit_backbone": {
+        "_target_": "vit.vit_small_patch16_256",
+        "global_pool": "avg"
+      }
+    }
+  },
+  "fourier_loss": {
+    "_target_": "loss.FourierLoss",
+    "num_multimodal_modalities": 6
+  },
+  "fourier_loss_weight": 0.0,
+  "input_norm": {
+    "_args_": [
+      {
+        "_target_": "normalizer.Normalizer"
+      },
+      {
+        "_target_": "torch.nn.LazyInstanceNorm2d",
+        "affine": false,
+        "track_running_stats": false
+      }
+    ],
+    "_target_": "torch.nn.Sequential"
+  },
+  "layernorm_unfreeze": true,
+  "loss": {
+    "_target_": "torch.nn.MSELoss",
+    "reduction": "none"
+  },
+  "lr_scheduler": null,
+  "mask_fourier_loss": true,
+  "mask_ratio": 0.75,
+  "model_type": "MAE",
+  "norm_pix_loss": false,
+  "num_blocks_to_freeze": 0,
+  "optimizer": null,
+  "torch_dtype": "float32",
+  "transformers_version": "4.45.2",
+  "trim_encoder_blocks": null,
+  "use_MAE_weight_init": false
+}
