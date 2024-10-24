@@ -1,20 +1,22 @@
+import logging
+import warnings
 from functools import partial
 from typing import Any, Dict, Optional, Tuple, Union
-import warnings
-import logging
 
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import pytorch_lightning as pl
-from torchmetrics import MeanMetric, Metric
 from torch.types import Number
+from torchmetrics import MeanMetric, Metric
 
-from vit import generate_2d_sincos_pos_embeddings
-from mae_modules import MAEEncoder, CAMAEDecoder, MAEDecoder
-from mae_utils import unflatten_tokens, flatten_images, apply_norm_pix
 from loss import FourierLoss
+from mae_modules import CAMAEDecoder, MAEDecoder, MAEEncoder
+from mae_utils import apply_norm_pix, flatten_images, unflatten_tokens
+from normalizer import Normalizer
+from vit import generate_2d_sincos_pos_embeddings
 
 TensorDict = Dict[str, torch.Tensor]
+
 
 class MetricsDict(torch.nn.ModuleDict):
     def __init__(self, **metrics: Metric) -> None:
@@ -34,7 +36,9 @@ class MetricsDict(torch.nn.ModuleDict):
         Dict[str, Number]
             The computed metric values.
         """
-        return {metric_name: metric.compute().item() for metric_name, metric in self.items()}
+        return {
+            metric_name: metric.compute().item() for metric_name, metric in self.items()
+        }
 
     def reset(self) -> None:
         """
@@ -42,6 +46,7 @@ class MetricsDict(torch.nn.ModuleDict):
         """
         for metric in self.values():
             metric.reset()
+
 
 def _make_metrics_dict(fourier_loss_weight: float) -> Dict[str, MeanMetric]:
     metrics = {
@@ -52,10 +57,6 @@ def _make_metrics_dict(fourier_loss_weight: float) -> Dict[str, MeanMetric]:
         metrics[MAE.FOURIER_LOSS] = MeanMetric()
     return metrics
 
-class Normalizer(torch.nn.Module):
-    def forward(self, pixels: torch.Tensor) -> torch.Tensor:
-        pixels = pixels.float()
-        return pixels / 255.0
 
 class MAE(pl.LightningModule):
     # loss metrics
@@ -109,27 +110,42 @@ class MAE(pl.LightningModule):
         # loss stuff
         self.apply_loss_unmasked = apply_loss_unmasked
         self.loss = loss
-        if hasattr(self.loss, "reduction") and self.loss.reduction != "none" and not self.apply_loss_unmasked:
-            warnings.warn("loss reduction not set to 'none', setting to 'none' in MAE constructor")
+        if (
+            hasattr(self.loss, "reduction")
+            and self.loss.reduction != "none"
+            and not self.apply_loss_unmasked
+        ):
+            warnings.warn(
+                "loss reduction not set to 'none', setting to 'none' in MAE constructor"
+            )
             self.loss.reduction = "none"
         self.fourier_loss = fourier_loss
 
         if fourier_loss_weight > 0 and self.fourier_loss is None:
-            raise ValueError("FourierLoss weight is activated but no fourier_loss was defined in constructor")
+            raise ValueError(
+                "FourierLoss weight is activated but no fourier_loss was defined in constructor"
+            )
         elif fourier_loss_weight >= 1:
-            raise ValueError("FourierLoss weight is too large to do mixing factor, weight should be < 1")
+            raise ValueError(
+                "FourierLoss weight is too large to do mixing factor, weight should be < 1"
+            )
 
         if self.mask_fourier_loss and self.apply_loss_unmasked:
-            raise ValueError("mask_fourier_loss and apply_loss_unmasked cannot both be True")
+            raise ValueError(
+                "mask_fourier_loss and apply_loss_unmasked cannot both be True"
+            )
 
         self.patch_size = int(self.encoder.vit_backbone.patch_embed.patch_size[0])
 
         # projection layer between the encoder and decoder
-        self.encoder_decoder_proj = nn.Linear(self.encoder.embed_dim, self.decoder.embed_dim, bias=True)
+        self.encoder_decoder_proj = nn.Linear(
+            self.encoder.embed_dim, self.decoder.embed_dim, bias=True
+        )
 
         self.decoder_pred = nn.Linear(
             self.decoder.embed_dim,
-            self.patch_size**2 * (1 if self.encoder.channel_agnostic else self.in_chans),
+            self.patch_size**2
+            * (1 if self.encoder.channel_agnostic else self.in_chans),
             bias=True,
         )  # linear layer from decoder embedding to input dims
 
@@ -138,7 +154,9 @@ class MAE(pl.LightningModule):
             self.decoder.embed_dim,
             length=self.encoder.vit_backbone.patch_embed.grid_size[0],
             use_class_token=self.encoder.vit_backbone.cls_token is not None,
-            num_modality=self.decoder.num_modalities if self.encoder.channel_agnostic else 1,
+            num_modality=self.decoder.num_modalities
+            if self.encoder.channel_agnostic
+            else 1,
         )
 
         if use_MAE_weight_init:
@@ -154,7 +172,9 @@ class MAE(pl.LightningModule):
         super().setup(stage)
         if self.trim_encoder_blocks is not None:
             logging.info(f"Trimming encoder to {self.trim_encoder_blocks} blocks!")
-            self.encoder.vit_backbone.blocks = self.encoder.vit_backbone.blocks[: self.trim_encoder_blocks]
+            self.encoder.vit_backbone.blocks = self.encoder.vit_backbone.blocks[
+                : self.trim_encoder_blocks
+            ]
 
     def _MAE_init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -174,18 +194,30 @@ class MAE(pl.LightningModule):
         pred: torch.nn.Module,
     ) -> torch.Tensor:
         """Feed forward the encoder latent through the decoders necessary projections and transformations."""
-        decoder_latent_projection = proj(encoder_latent)  # projection from encoder.embed_dim to decoder.embed_dim
-        decoder_tokens = decoder.forward_masked(decoder_latent_projection, ind_restore)  # decoder.embed_dim output
-        predicted_reconstruction = pred(decoder_tokens)  # linear projection to input dim
+        decoder_latent_projection = proj(
+            encoder_latent
+        )  # projection from encoder.embed_dim to decoder.embed_dim
+        decoder_tokens = decoder.forward_masked(
+            decoder_latent_projection, ind_restore
+        )  # decoder.embed_dim output
+        predicted_reconstruction = pred(
+            decoder_tokens
+        )  # linear projection to input dim
         return predicted_reconstruction[:, 1:, :]  # drop class token
 
     def forward(
         self, imgs: torch.Tensor, constant_noise: Union[torch.Tensor, None] = None
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         imgs = self.input_norm(imgs)
-        latent, mask, ind_restore = self.encoder.forward_masked(imgs, self.mask_ratio, constant_noise)  # encoder blocks
+        latent, mask, ind_restore = self.encoder.forward_masked(
+            imgs, self.mask_ratio, constant_noise
+        )  # encoder blocks
         reconstruction = self.decode_to_reconstruction(
-            latent, ind_restore, self.encoder_decoder_proj, self.decoder, self.decoder_pred
+            latent,
+            ind_restore,
+            self.encoder_decoder_proj,
+            self.decoder,
+            self.decoder_pred,
         )
         return latent, reconstruction, mask
 
@@ -200,7 +232,9 @@ class MAE(pl.LightningModule):
         loss_dict = {}
         img = self.input_norm(img)
         target_flattened = flatten_images(
-            img, patch_size=self.patch_size, channel_agnostic=self.encoder.channel_agnostic
+            img,
+            patch_size=self.patch_size,
+            channel_agnostic=self.encoder.channel_agnostic,
         )
         if self.norm_pix_loss:
             target_flattened = apply_norm_pix(target_flattened)
@@ -208,7 +242,9 @@ class MAE(pl.LightningModule):
         loss: torch.Tensor = self.loss(
             reconstruction, target_flattened
         )  # should be with MSE or MAE (L1) with reduction='none'
-        loss = loss.mean(dim=-1)  # average over embedding dim -> mean loss per patch (N,L)
+        loss = loss.mean(
+            dim=-1
+        )  # average over embedding dim -> mean loss per patch (N,L)
         if apply_loss_to_unmasked_tokens:
             loss = loss.mean()
         else:
@@ -228,7 +264,9 @@ class MAE(pl.LightningModule):
 
         # here we use a mixing factor to keep the loss magnitude appropriate with fourier
         if self.fourier_loss_weight > 0:
-            loss = (1 - self.fourier_loss_weight) * loss + (self.fourier_loss_weight * floss)
+            loss = (1 - self.fourier_loss_weight) * loss + (
+                self.fourier_loss_weight * floss
+            )
         return loss, loss_dict
 
     def compute_unmasked_loss(
@@ -278,9 +316,13 @@ class MAE(pl.LightningModule):
         latent, reconstruction, mask = self(img.clone())
         # TODO: support configuration such that some losses are applied masked and some are not.
         if self.apply_loss_unmasked:
-            full_loss, loss_dict = self.compute_unmasked_loss(reconstruction, img.float())
+            full_loss, loss_dict = self.compute_unmasked_loss(
+                reconstruction, img.float()
+            )
         else:
-            full_loss, loss_dict = self.compute_MAE_loss(reconstruction, img.float(), mask)
+            full_loss, loss_dict = self.compute_MAE_loss(
+                reconstruction, img.float(), mask
+            )
         return {
             "loss": full_loss,
             **loss_dict,  # type: ignore[dict-item]
@@ -303,4 +345,3 @@ class MAE(pl.LightningModule):
         dataloader_idx: int = 0,
     ) -> None:
         super().on_validation_batch_end(outputs, batch, batch_idx, dataloader_idx)
-

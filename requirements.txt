@@ -55,6 +55,8 @@ idna==3.10
     # via
     #   requests
     #   yarl
+isort==5.13.2
+    # via -r requirements.in
 jinja2==3.1.4
     # via torch
 lightning-utilities==0.11.8
@@ -142,6 +144,8 @@ requests==2.32.3
     # via
     #   huggingface-hub
     #   transformers
+ruff==0.7.0
+    # via -r requirements.in
 safetensors==0.4.5
     # via
     #   timm

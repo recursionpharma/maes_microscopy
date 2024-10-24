@@ -69,6 +69,7 @@ def unflatten_tokens(
 
     return img
 
+
 def apply_norm_pix(flattened_imgs: torch.Tensor, eps: float = 1.0e-6) -> torch.Tensor:
     """
     self-normalization of each input patch

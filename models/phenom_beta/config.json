@@ -54,13 +54,28 @@
     "_target_": "torch.nn.MSELoss",
     "reduction": "none"
   },
-  "lr_scheduler": null,
+  "lr_scheduler": {
+    "_partial_": true,
+    "_target_": "torch.optim.lr_scheduler.OneCycleLR",
+    "anneal_strategy": "cos",
+    "max_lr": 0.0001,
+    "pct_start": 0.1
+  },
+  "optimizer": {
+    "_partial_": true,
+    "_target_": "timm.optim.lion.Lion",
+    "betas": [
+      0.9,
+      0.95
+    ],
+    "lr": 0.0001,
+    "weight_decay": 0.05
+  },
   "mask_fourier_loss": true,
   "mask_ratio": 0.75,
   "model_type": "MAE",
   "norm_pix_loss": false,
   "num_blocks_to_freeze": 0,
-  "optimizer": null,
   "torch_dtype": "float32",
   "transformers_version": "4.45.2",
   "trim_encoder_blocks": null,

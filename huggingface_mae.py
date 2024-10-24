@@ -1,45 +1,43 @@
-import warnings
 import logging
+import warnings
+from typing import Dict, Tuple, Union
 
 import torch
 import torch.nn as nn
-from transformers import PreTrainedModel, PretrainedConfig
-
-# from functools import partial
-from typing import Any, Dict, Optional, Tuple, Union
 from hydra.utils import instantiate
+from transformers import PretrainedConfig, PreTrainedModel
 
-# from torchmetrics import MeanMetric, Metric
-# from torch.types import Number
-
+from mae_modules import CAMAEDecoder, MAEDecoder
+from mae_utils import flatten_images, unflatten_tokens
 from vit import generate_2d_sincos_pos_embeddings
-from mae_modules import MAEEncoder, CAMAEDecoder, MAEDecoder
-from mae_utils import unflatten_tokens, flatten_images, apply_norm_pix
+
 
 TensorDict = Dict[str, torch.Tensor]
 
+
 class MAEConfig(PretrainedConfig):
     model_type = "MAE"
-
-    def __init__(self,
-                 mask_ratio=0.75,
-                 encoder=None,
-                 decoder=None,
-                 loss=None,
-                 optimizer=None,
-                 input_norm=None,
-                 norm_pix_loss=False,
-                 apply_loss_unmasked=False,
-                 fourier_loss=None,
-                 fourier_loss_weight=0.0,
-                 lr_scheduler=None,
-                 use_MAE_weight_init=False,
-                 crop_size=-1,
-                 num_blocks_to_freeze=0,
-                 trim_encoder_blocks=None,
-                 layernorm_unfreeze=True,
-                 mask_fourier_loss=True,
-                 **kwargs):
+    def __init__(
+        self,
+        mask_ratio=0.75,
+        encoder=None,
+        decoder=None,
+        loss=None,
+        optimizer=None,
+        input_norm=None,
+        norm_pix_loss=False,
+        apply_loss_unmasked=False,
+        fourier_loss=None,
+        fourier_loss_weight=0.0,
+        lr_scheduler=None,
+        use_MAE_weight_init=False,
+        crop_size=-1,
+        num_blocks_to_freeze=0,
+        trim_encoder_blocks=None,
+        layernorm_unfreeze=True,
+        mask_fourier_loss=True,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.mask_ratio = mask_ratio
         self.encoder = encoder
@@ -58,6 +56,7 @@ class MAEConfig(PretrainedConfig):
         self.trim_encoder_blocks = trim_encoder_blocks
         self.layernorm_unfreeze = layernorm_unfreeze
         self.mask_fourier_loss = mask_fourier_loss
+
 
 class MAEModel(PreTrainedModel):
     config_class = MAEConfig
@@ -85,27 +84,42 @@ class MAEModel(PreTrainedModel):
         # loss stuff
         self.apply_loss_unmasked = config.apply_loss_unmasked
         self.loss = instantiate(config.loss)
-        if hasattr(self.loss, "reduction") and self.loss.reduction != "none" and not self.apply_loss_unmasked:
-            warnings.warn("loss reduction not set to 'none', setting to 'none' in MAE constructor")
+        if (
+            hasattr(self.loss, "reduction")
+            and self.loss.reduction != "none"
+            and not self.apply_loss_unmasked
+        ):
+            warnings.warn(
+                "loss reduction not set to 'none', setting to 'none' in MAE constructor"
+            )
             self.loss.reduction = "none"
 
         self.fourier_loss = instantiate(config.fourier_loss)
         if self.fourier_loss_weight > 0 and self.fourier_loss is None:
-            raise ValueError("FourierLoss weight is activated but no fourier_loss was defined in constructor")
+            raise ValueError(
+                "FourierLoss weight is activated but no fourier_loss was defined in constructor"
+            )
         elif self.fourier_loss_weight >= 1:
-            raise ValueError("FourierLoss weight is too large to do mixing factor, weight should be < 1")
+            raise ValueError(
+                "FourierLoss weight is too large to do mixing factor, weight should be < 1"
+            )
 
         if self.mask_fourier_loss and self.apply_loss_unmasked:
-            raise ValueError("mask_fourier_loss and apply_loss_unmasked cannot both be True")
+            raise ValueError(
+                "mask_fourier_loss and apply_loss_unmasked cannot both be True"
+            )
 
         self.patch_size = int(self.encoder.vit_backbone.patch_embed.patch_size[0])
 
         # projection layer between the encoder and decoder
-        self.encoder_decoder_proj = nn.Linear(self.encoder.embed_dim, self.decoder.embed_dim, bias=True)
+        self.encoder_decoder_proj = nn.Linear(
+            self.encoder.embed_dim, self.decoder.embed_dim, bias=True
+        )
 
         self.decoder_pred = nn.Linear(
             self.decoder.embed_dim,
-            self.patch_size**2 * (1 if self.encoder.channel_agnostic else self.in_chans),
+            self.patch_size**2
+            * (1 if self.encoder.channel_agnostic else self.in_chans),
             bias=True,
         )  # linear layer from decoder embedding to input dims
 
@@ -114,7 +128,9 @@ class MAEModel(PreTrainedModel):
             self.decoder.embed_dim,
             length=self.encoder.vit_backbone.patch_embed.grid_size[0],
             use_class_token=self.encoder.vit_backbone.cls_token is not None,
-            num_modality=self.decoder.num_modalities if self.encoder.channel_agnostic else 1,
+            num_modality=self.decoder.num_modalities
+            if self.encoder.channel_agnostic
+            else 1,
         )
 
         if config.use_MAE_weight_init:
@@ -130,7 +146,9 @@ class MAEModel(PreTrainedModel):
         super().setup(stage)
         if self.trim_encoder_blocks is not None:
             logging.info(f"Trimming encoder to {self.trim_encoder_blocks} blocks!")
-            self.encoder.vit_backbone.blocks = self.encoder.vit_backbone.blocks[: self.trim_encoder_blocks]
+            self.encoder.vit_backbone.blocks = self.encoder.vit_backbone.blocks[
+                : self.trim_encoder_blocks
+            ]
 
     def _MAE_init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -150,18 +168,30 @@ class MAEModel(PreTrainedModel):
         pred: torch.nn.Module,
     ) -> torch.Tensor:
         """Feed forward the encoder latent through the decoders necessary projections and transformations."""
-        decoder_latent_projection = proj(encoder_latent)  # projection from encoder.embed_dim to decoder.embed_dim
-        decoder_tokens = decoder.forward_masked(decoder_latent_projection, ind_restore)  # decoder.embed_dim output
-        predicted_reconstruction = pred(decoder_tokens)  # linear projection to input dim
+        decoder_latent_projection = proj(
+            encoder_latent
+        )  # projection from encoder.embed_dim to decoder.embed_dim
+        decoder_tokens = decoder.forward_masked(
+            decoder_latent_projection, ind_restore
+        )  # decoder.embed_dim output
+        predicted_reconstruction = pred(
+            decoder_tokens
+        )  # linear projection to input dim
         return predicted_reconstruction[:, 1:, :]  # drop class token
 
     def forward(
         self, imgs: torch.Tensor, constant_noise: Union[torch.Tensor, None] = None
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         imgs = self.input_norm(imgs)
-        latent, mask, ind_restore = self.encoder.forward_masked(imgs, self.mask_ratio, constant_noise)  # encoder blocks
+        latent, mask, ind_restore = self.encoder.forward_masked(
+            imgs, self.mask_ratio, constant_noise
+        )  # encoder blocks
         reconstruction = self.decode_to_reconstruction(
-            latent, ind_restore, self.encoder_decoder_proj, self.decoder, self.decoder_pred
+            latent,
+            ind_restore,
+            self.encoder_decoder_proj,
+            self.decoder,
+            self.decoder_pred,
         )
         return latent, reconstruction, mask
 
@@ -176,15 +206,17 @@ class MAEModel(PreTrainedModel):
         loss_dict = {}
         img = self.input_norm(img)
         target_flattened = flatten_images(
-            img, patch_size=self.patch_size, channel_agnostic=self.encoder.channel_agnostic
+            img,
+            patch_size=self.patch_size,
+            channel_agnostic=self.encoder.channel_agnostic,
         )
-        if self.norm_pix_loss:
-            target_flattened = apply_norm_pix(target_flattened)
 
         loss: torch.Tensor = self.loss(
             reconstruction, target_flattened
         )  # should be with MSE or MAE (L1) with reduction='none'
-        loss = loss.mean(dim=-1)  # average over embedding dim -> mean loss per patch (N,L)
+        loss = loss.mean(
+            dim=-1
+        )  # average over embedding dim -> mean loss per patch (N,L)
         if apply_loss_to_unmasked_tokens:
             loss = loss.mean()
         else:
@@ -204,7 +236,9 @@ class MAEModel(PreTrainedModel):
 
         # here we use a mixing factor to keep the loss magnitude appropriate with fourier
         if self.fourier_loss_weight > 0:
-            loss = (1 - self.fourier_loss_weight) * loss + (self.fourier_loss_weight * floss)
+            loss = (1 - self.fourier_loss_weight) * loss + (
+                self.fourier_loss_weight * floss
+            )
         return loss, loss_dict
 
     def compute_unmasked_loss(
@@ -213,8 +247,6 @@ class MAEModel(PreTrainedModel):
         """Computes final loss and returns specific values of component losses for metric reporting."""
         loss_dict = {}
         target = self.input_norm(img)
-        if self.norm_pix_loss:
-            target = apply_norm_pix(img)
 
         reconstruction_ = unflatten_tokens(
             reconstruction,
@@ -254,9 +286,13 @@ class MAEModel(PreTrainedModel):
         latent, reconstruction, mask = self(img.clone())
         # TODO: support configuration such that some losses are applied masked and some are not.
         if self.apply_loss_unmasked:
-            full_loss, loss_dict = self.compute_unmasked_loss(reconstruction, img.float())
+            full_loss, loss_dict = self.compute_unmasked_loss(
+                reconstruction, img.float()
+            )
         else:
-            full_loss, loss_dict = self.compute_MAE_loss(reconstruction, img.float(), mask)
+            full_loss, loss_dict = self.compute_MAE_loss(
+                reconstruction, img.float(), mask
+            )
         return {
             "loss": full_loss,
             **loss_dict,  # type: ignore[dict-item]
@@ -279,7 +315,7 @@ class MAEModel(PreTrainedModel):
         dataloader_idx: int = 0,
     ) -> None:
         super().on_validation_batch_end(outputs, batch, batch_idx, dataloader_idx)
-    
+
     def save_pretrained(self, save_directory: str, **kwargs):
         filename = kwargs.pop("filename", "model.safetensors")
         modelpath = f"{save_directory}/{filename}"

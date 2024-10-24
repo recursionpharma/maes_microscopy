@@ -9,3 +9,5 @@ xformers
 zarr
 hydra-core
 pytorch-lightning>=2.1
+isort
+ruff
