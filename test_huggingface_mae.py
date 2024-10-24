@@ -3,13 +3,11 @@ import torch
 from huggingface_mae import MAEConfig, MAEModel
 
 phenombeta_model_dir = "models/phenom_beta"
-torch_model = MAEModel.from_pretrained(phenombeta_model_dir, filename="last.pickle")
-
-huggingface_modelpath = "recursionpharma/test-pb-model"
-torch_model.push_to_hub(huggingface_modelpath)
-# model.save_pretrained(huggingface_modelpath, push_to_hub=True, repo_id=huggingface_modelpath)
-
 huggingface_phenombeta_model_dir = "models/phenom_beta_huggingface"
+huggingface_modelpath = "recursionpharma/test-pb-model"
+
+torch_model = MAEModel.from_pretrained(phenombeta_model_dir, filename="last.pickle")
+torch_model.push_to_hub(huggingface_modelpath)
 torch_model.save_pretrained(huggingface_phenombeta_model_dir)
 
 # testing
