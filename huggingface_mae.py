@@ -11,12 +11,12 @@ from mae_modules import CAMAEDecoder, MAEDecoder
 from mae_utils import flatten_images, unflatten_tokens
 from vit import generate_2d_sincos_pos_embeddings
 
-
 TensorDict = Dict[str, torch.Tensor]
 
 
 class MAEConfig(PretrainedConfig):
     model_type = "MAE"
+
     def __init__(
         self,
         mask_ratio=0.75,
@@ -325,7 +325,7 @@ class MAEModel(PreTrainedModel):
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, *model_args, **kwargs):
         filename = kwargs.pop("filename", "model.safetensors")
-        from_state_dict = kwargs.pop("from_state_dict", False)
+        # from_state_dict = kwargs.pop("from_state_dict", False)
 
         modelpath = f"{pretrained_model_name_or_path}/{filename}"
         config = MAEConfig.from_pretrained(pretrained_model_name_or_path, **kwargs)

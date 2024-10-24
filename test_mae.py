@@ -1,6 +1,7 @@
+import json
+
 import torch
 from hydra.utils import instantiate
-import json
 
 model_config = {
     "_target_": "mae.MAE",
@@ -22,7 +23,10 @@ model_config = {
         "max_in_chans": 11,
         "vit_backbone": {
             "_target_": "vit.sincos_positional_encoding_vit",
-            "vit_backbone": {"_target_": "vit.vit_small_patch16_256", "global_pool": "avg"},
+            "vit_backbone": {
+                "_target_": "vit.vit_small_patch16_256",
+                "global_pool": "avg",
+            },
         },
     },
     "decoder": {
@@ -34,7 +38,11 @@ model_config = {
         "num_heads": 16,
         "mlp_ratio": 4,
         "qkv_bias": True,
-        "norm_layer": {"_target_": "torch.nn.LayerNorm", "_partial_": True, "eps": 1e-6},
+        "norm_layer": {
+            "_target_": "torch.nn.LayerNorm",
+            "_partial_": True,
+            "eps": 1e-6,
+        },
     },
     "norm_pix_loss": False,
     "fourier_loss_weight": 0.01,
