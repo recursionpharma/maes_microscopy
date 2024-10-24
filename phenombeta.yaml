@@ -1,0 +1,53 @@
+model:
+  _target_: MAE
+  mask_ratio: .75
+  input_norm:
+    _target_: torch.nn.Sequential
+    _args_:
+      - _target_: Normalizer
+      - _target_: torch.nn.LazyInstanceNorm2d
+        affine: false
+        track_running_stats: false
+  encoder:
+    _target_: MAEEncoder
+    channel_agnostic: true
+    max_in_chans: 11 # the exported CA-MAE will support embedding images up-to this many channels
+    vit_backbone:
+      _target_: sincos_positional_encoding_vit
+      vit_backbone:
+        _target_: vit_small_patch16_256
+        global_pool: avg
+  decoder:
+    _target_: CAMAEDecoder
+    num_modalities: &num_modalities 6
+    tokens_per_modality: 256 # depends on patch size & crop size!
+    embed_dim: 256
+    depth: 4
+    num_heads: 16
+    mlp_ratio: 4
+    qkv_bias: true
+    norm_layer:
+      _target_: torch.nn.LayerNorm
+      _partial_: true
+      eps: 1e-6
+  norm_pix_loss: false
+  fourier_loss_weight: 0.01
+  fourier_loss:
+    _target_: FourierLoss
+    num_multimodal_modalities: *num_modalities
+  loss:
+    _target_: torch.nn.MSELoss
+    reduction: none
+  optimizer:
+    _target_: timm.optim.lion.Lion
+    _partial_: true
+    lr: 1e-4
+    weight_decay: 0.05
+    # momentum: 0.9
+    betas: [0.9, 0.95]
+  lr_scheduler:
+    _target_: torch.optim.lr_scheduler.OneCycleLR
+    _partial_: true
+    max_lr: 1e-4
+    pct_start: 0.1
+    anneal_strategy: cos
