@@ -1,6 +1,6 @@
 import torch
 
-from huggingface_mae import MAEModel
+from huggingface_mae import MAEConfig, MAEModel
 
 phenombeta_model_dir = "models/phenom_beta"
 torch_model = MAEModel.from_pretrained(phenombeta_model_dir, filename="last.pickle")
@@ -15,6 +15,9 @@ torch_model.save_pretrained(huggingface_phenombeta_model_dir)
 # testing
 torch_model = MAEModel.from_pretrained(phenombeta_model_dir, filename="last.pickle")
 huggingface_model = MAEModel.from_pretrained(huggingface_phenombeta_model_dir)
+
+torch_model.eval()
+huggingface_model.eval()
 
 
 def encoder_test_inference(model, example_input_array):
