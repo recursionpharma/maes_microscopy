@@ -62,7 +62,7 @@
     "pct_start": 0.1
   },
   "mask_fourier_loss": true,
-  "mask_ratio": 0.75,
+  "mask_ratio": 0.0,
   "model_type": "MAE",
   "norm_pix_loss": false,
   "num_blocks_to_freeze": 0,

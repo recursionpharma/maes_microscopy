@@ -5,7 +5,7 @@ from hydra.utils import instantiate
 
 model_config = {
     "_target_": "mae.MAE",
-    "mask_ratio": 0.75,
+    "mask_ratio": 0.0,
     "input_norm": {
         "_target_": "torch.nn.Sequential",
         "_args_": [
