@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from huggingface_mae import MAEModel
+from maes_microscopy.huggingface_mae import MAEModel
 
 huggingface_openphenom_model_dir = "."
 # huggingface_modelpath = "recursionpharma/OpenPhenom"

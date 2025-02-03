@@ -30,4 +30,4 @@ dependencies = [
 ]
 
 [tool.setuptools]
-py-modules = []
+packages=["maes_microscopy"]
