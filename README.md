@@ -1,3 +1,5 @@
+[![scorecard-score](https://github.com/recursionpharma/octo-guard-badges/blob/trunk/badges/repo/maes_microscopy/maturity_score.svg?raw=true)](https://infosec-docs.prod.rxrx.io/octoguard/scorecards/maes_microscopy)
+[![scorecard-status](https://github.com/recursionpharma/octo-guard-badges/blob/trunk/badges/repo/maes_microscopy/scorecard_status.svg?raw=true)](https://infosec-docs.prod.rxrx.io/octoguard/scorecards/maes_microscopy)
 # Masked Autoencoders are Scalable Learners of Cellular Morphology
 Official repo for Recursion's two recently accepted papers:
 - Spotlight full-length paper at [CVPR 2024](https://cvpr.thecvf.com/Conferences/2024/AcceptedPapers) -- Masked Autoencoders for Microscopy are Scalable Learners of Cellular Biology
