@@ -52,7 +52,7 @@ class FourierLoss(nn.Module):
         )
 
         if (
-            flattened_images and not self.num_bins
+            flattened_images and not self.num_modalities
         ):  # then output loss should be reshaped
             loss_tensor = loss_tensor.reshape(B, H_W * self.num_modalities, C)
 
